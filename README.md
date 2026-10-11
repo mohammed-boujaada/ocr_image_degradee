@@ -60,7 +60,7 @@ After applying the preprocessing pipeline, the OCR engine successfully identifie
 3. Ensure Tesseract OCR is installed on your system.
 4. Open and execute the Jupyter Notebook:
    ```bash
-   jupyter notebook ex1.ipynb
+   jupyter notebook ocr_pipeline.ipynb
    ```
    Alternatively, the logic can be easily adapted into a standalone Python script (`ex1.py`).
 
@@ -69,7 +69,3 @@ After applying the preprocessing pipeline, the OCR engine successfully identifie
 Master's Student in Artificial Intelligence & Emerging Technologies at FSAN  
 [LinkedIn](https://www.linkedin.com/in/mohammed-b0ujaada-229a3333a/) | [GitHub](https://github.com/mohammed-boujaada)
 
-2. **Professionnalisme** : L'absence totale d'emojis et l'utilisation d'un vocabulaire technique précis (dimensionality, salt-and-pepper noise, bitwise inversion) renforcent la crédibilité du projet.
-3. **Reproductibilité** : La section "Requirements" et "Installation" permet à n'importe qui (recruteur, professeur) de reproduire vos résultats en quelques minutes.
-
-N'oubliez pas de mettre à jour le lien LinkedIn dans la section "Author" avec votre URL exacte si nécessaire !
