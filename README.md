@@ -30,9 +30,12 @@ After applying the preprocessing pipeline, the OCR engine successfully identifie
 ## Project Structure
 ```text
 .
-├── ex1.ipynb                      # Jupyter Notebook containing the pipeline and visualization
-├── exam_ultra_hard.png            # Source degraded image
-└── README.md                      # Project documentation
+── ocr_pipeline.ipynb # Jupyter Notebook containing the pipeline and visualization
+── original_image.jpeg # Source degraded image
+├── processed_image.png # pre-processed image
+├── .gitattributes
+├── .gitignore
+└── README.md # Documentation du projet
 ```
 
 ## Requirements
@@ -63,7 +66,6 @@ After applying the preprocessing pipeline, the OCR engine successfully identifie
 
 ## Author
 **Mohammed Boujaada**  
-**MOhamed Zahir**
 Master's Student in Artificial Intelligence & Emerging Technologies at FSAN  
 [LinkedIn](https://www.linkedin.com/in/mohammed-b0ujaada-229a3333a/) | [GitHub](https://github.com/mohammed-boujaada)
 
