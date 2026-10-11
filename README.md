@@ -100,7 +100,7 @@ Ce résultat correspond à la sortie obtenue lors de l'exécution du pipeline su
 
 **Mohammed Boujaada**
 
-Étudiant en Master Intelligence Artificielle et Technologies Émergentes à la Faculté Pluridisciplinaire de Nador (FSAN).
+ Étudiant en Master Intelligence Artificielle et Technologies Émergentes à la Faculté des Sciences Appliquées de Nador (FSAN), Université Mohammed Premier.
 
 - [LinkedIn](https://www.linkedin.com/in/mohammed-b0ujaada-229a3333a/)
 - [GitHub](https://github.com/mohammed-boujaada)
