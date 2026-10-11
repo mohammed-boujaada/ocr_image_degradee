@@ -1,71 +1,106 @@
+# Reconnaissance optique de caractères (OCR) sur des images dégradées
 
-# Optical Character Recognition (OCR) on Degraded Images
+## Objectif
 
-## Objective
-This project demonstrates the extraction of text from a heavily degraded and noisy image (`original_image.png`) by combining advanced image preprocessing techniques using OpenCV with the PyTesseract OCR engine.
+Ce projet démontre l'extraction de texte à partir d'une image fortement dégradée et bruitée (`original_image.jpeg`), en combinant des techniques avancées de prétraitement d'images avec OpenCV et le moteur de reconnaissance optique de caractères (OCR) PyTesseract.
 
-## Image Processing Pipeline
-Extracting text from low-quality images requires rigorous preprocessing to maximize the OCR engine's accuracy. The implemented pipeline consists of the following sequential steps:
+## Pipeline de traitement de l'image
 
-1. **Grayscale Conversion**: Reduces the image dimensionality to simplify subsequent processing.
-2. **Median Filtering**: Applies a median blur with a 21x21 kernel to effectively remove salt-and-pepper noise while preserving the sharp edges of the characters.
-3. **Otsu's Thresholding and Inversion**: Converts the image to binary using Otsu's automatic thresholding, followed by a bitwise inversion to ensure white characters on a black background, which is optimal for contour and morphological operations.
-4. **Morphological Operations**: 
-   - *Dilation*: Thickens the character strokes using a 5x5 rectangular kernel (2 iterations) to make them more robust.
-   - *Opening*: Eliminates small noise artifacts generated during the dilation process.
-5. **Upscaling**: Resizes the image by a factor of 6 using linear interpolation. Tesseract's LSTM engine is highly sensitive to font resolution, and upscaling significantly improves recognition accuracy.
-6. **Border Padding**: Adds a 40-pixel white border around the image to prevent characters located at the edges from being truncated or misinterpreted during analysis.
+L'extraction de texte à partir d'images de faible qualité nécessite un prétraitement rigoureux afin d'améliorer la précision du moteur OCR. Le pipeline mis en œuvre comprend les étapes suivantes :
 
-## OCR Configuration
-To optimize detection and eliminate false positives, PyTesseract is configured with specific parameters tailored to this use case:
-- `--oem 1`: Utilizes the LSTM neural network engine (the most accurate default engine).
-- `--psm 8`: Treats the image as a single word (Single word mode), preventing the engine from searching for sentence structures.
-- `-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`: Strictly restricts the allowed characters to uppercase letters and digits, filtering out any spurious symbol detections.
+1. **Conversion en niveaux de gris** : réduit la représentation de l'image à un seul canal afin de simplifier les étapes de traitement ultérieures.
 
-## Results
-After applying the preprocessing pipeline, the OCR engine successfully identifies the hidden text in the degraded image.
+2. **Filtrage médian** : applique un flou médian avec un noyau de taille `21 × 21` pour éliminer efficacement le bruit impulsionnel, notamment le bruit de type « sel et poivre », tout en préservant autant que possible les contours des caractères.
 
-- **Detected Text**: `EXAMB`
+3. **Seuillage d'Otsu et inversion** : convertit l'image en une représentation binaire à l'aide de la méthode automatique de seuillage d'Otsu, puis inverse les valeurs des pixels afin d'obtenir des caractères blancs sur un fond noir. Cette représentation facilite certaines opérations morphologiques.
 
-## Project Structure
+4. **Opérations morphologiques** :
+
+   - **Dilatation** : épaissit les traits des caractères à l'aide d'un noyau rectangulaire de taille `5 × 5`, appliqué pendant deux itérations, afin de renforcer leur visibilité.
+   - **Ouverture morphologique** : permet d'éliminer certaines petites composantes parasites et certains artefacts introduits lors du traitement.
+
+5. **Agrandissement de l'image** : redimensionne l'image avec un facteur d'échelle de `6`, en utilisant l'interpolation linéaire. L'agrandissement peut améliorer la lisibilité des caractères pour le moteur OCR de Tesseract, notamment lorsque l'image initiale présente une résolution insuffisante.
+
+6. **Ajout d'une bordure** : ajoute une marge de `40` pixels autour de l'image afin de limiter les erreurs de reconnaissance des caractères proches des bords. La couleur de cette bordure doit être adaptée à la polarité de l'image finale.
+
+## Configuration du moteur OCR
+
+Afin de limiter les fausses détections et d'adapter la reconnaissance au cas étudié, PyTesseract est configuré avec les paramètres suivants :
+
+- `--oem 1` : utilise le moteur de reconnaissance basé sur les réseaux neuronaux LSTM de Tesseract.
+- `--psm 8` : indique que l'image contient un seul mot, ce qui convient lorsque le texte recherché est constitué d'un mot isolé.
+- `-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789` : limite les caractères autorisés aux lettres majuscules de A à Z et aux chiffres de 0 à 9, afin de réduire les détections de symboles indésirables.
+
+## Résultats
+
+Après l'application du pipeline de prétraitement, le moteur OCR a détecté le texte suivant dans l'image dégradée :
+
+- **Texte détecté** : `EXAMB`
+
+Ce résultat correspond à la sortie obtenue lors de l'exécution du pipeline sur l'image utilisée dans ce projet.
+
+## Structure du projet
+
 ```text
 .
-── ocr_pipeline.ipynb # Jupyter Notebook containing the pipeline and visualization
-── original_image.jpeg # Source degraded image
-├── processed_image.png # pre-processed image
+├── ocr_pipeline.ipynb     # Notebook Jupyter contenant le pipeline et les visualisations
+├── original_image.jpeg    # Image source dégradée
+├── processed_image.png    # Image prétraitée
 ├── .gitattributes
 ├── .gitignore
-└── README.md # Documentation du projet
+└── README.md              # Documentation du projet
 ```
 
-## Requirements
-- Python 3.10+
+## Prérequis
+
+- Python 3.10 ou version ultérieure
 - OpenCV (`opencv-python`)
 - PyTesseract (`pytesseract`)
 - Matplotlib (`matplotlib`)
 - Pillow (`Pillow`)
 
-*Note: The system-level Tesseract OCR engine must be installed and added to your system's PATH.*
-- **Windows**: Download the installer from [UB-Mannheim Tesseract Wiki](https://github.com/UB-Mannheim/tesseract/wiki)
-- **Linux**: `sudo apt-get install tesseract-ocr`
-- **macOS**: `brew install tesseract`
+**Remarque :** le moteur Tesseract OCR doit également être installé au niveau du système et accessible depuis le `PATH`.
 
-## Installation and Execution
+### Installation de Tesseract OCR
 
-1. Clone the repository or download the project files.
-2. Install the required Python dependencies:
+- **Windows** : télécharger l'installateur depuis le [dépôt UB-Mannheim Tesseract](https://github.com/UB-Mannheim/tesseract/wiki).
+- **Linux** : exécuter la commande suivante :
+
+  ```bash
+  sudo apt-get install tesseract-ocr
+  ```
+
+- **macOS** : exécuter la commande suivante :
+
+  ```bash
+  brew install tesseract
+  ```
+
+## Installation et exécution
+
+1. Cloner le dépôt Git ou télécharger les fichiers du projet.
+
+2. Installer les dépendances Python nécessaires :
+
    ```bash
    pip install opencv-python pytesseract matplotlib Pillow
    ```
-3. Ensure Tesseract OCR is installed on your system.
-4. Open and execute the Jupyter Notebook:
+
+3. Vérifier que Tesseract OCR est installé et accessible depuis le système.
+
+4. Ouvrir et exécuter le notebook Jupyter :
+
    ```bash
    jupyter notebook ocr_pipeline.ipynb
    ```
-   Alternatively, the logic can be easily adapted into a standalone Python script (`ex1.py`).
 
-## Author
-**Mohammed Boujaada**  
-Master's Student in Artificial Intelligence & Emerging Technologies at FSAN  
-[LinkedIn](https://www.linkedin.com/in/mohammed-b0ujaada-229a3333a/) | [GitHub](https://github.com/mohammed-boujaada)
+   Il est également possible d'adapter facilement le code du notebook en un script Python autonome nommé `ocr_pipeline.py`.
 
+## Auteur
+
+**Mohammed Boujaada**
+
+Étudiant en Master Intelligence Artificielle et Technologies Émergentes à la Faculté Pluridisciplinaire de Nador (FSAN).
+
+- [LinkedIn](https://www.linkedin.com/in/mohammed-b0ujaada-229a3333a/)
+- [GitHub](https://github.com/mohammed-boujaada)
