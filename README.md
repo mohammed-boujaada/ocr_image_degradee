@@ -2,7 +2,7 @@
 # Optical Character Recognition (OCR) on Degraded Images
 
 ## Objective
-This project demonstrates the extraction of text from a heavily degraded and noisy image (`exam_ultra_hard.png`) by combining advanced image preprocessing techniques using OpenCV with the PyTesseract OCR engine.
+This project demonstrates the extraction of text from a heavily degraded and noisy image (`original_image.png`) by combining advanced image preprocessing techniques using OpenCV with the PyTesseract OCR engine.
 
 ## Image Processing Pipeline
 Extracting text from low-quality images requires rigorous preprocessing to maximize the OCR engine's accuracy. The implemented pipeline consists of the following sequential steps:
