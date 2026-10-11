@@ -1,0 +1,22 @@
+# Fichiers temporaires Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+venv/
+env/
+ENV/
+
+# Fichiers de configuration d'IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers de cache Jupyter Notebook (si tu utilises un .ipynb)
+.ipynb_checkpoints/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
