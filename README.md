@@ -1,263 +1,309 @@
+# Optical Character Recognition (OCR) on a Highly Degraded Image using OpenCV and PyTesseract
 
-# Reconnaissance optique de caractères (OCR) sur une image fortement dégradée avec OpenCV et PyTesseract
+## 1. Project Overview
 
-## 1. Présentation du projet
+This project falls within the domain of computer vision applied to text extraction. It aims to recognize an isolated word from a highly degraded and noisy image (`exam_ultra_hard.png`), by combining image preprocessing techniques with OpenCV and the Optical Character Recognition (OCR) engine Tesseract, accessible in Python via the PyTesseract library.
 
-Ce projet s'inscrit dans le domaine de la vision par ordinateur appliquée à l'extraction de texte. Il vise à reconnaître un mot isolé à partir d'une image fortement dégradée et bruitée (`exam_ultra_hard.png`), en combinant des techniques de prétraitement d'images avec OpenCV et le moteur de reconnaissance optique de caractères (*Optical Character Recognition — OCR*) Tesseract, accessible en Python via la bibliothèque PyTesseract.
+The pipeline successively applies median filtering, automatic binarization using Otsu's method, morphological operations, upscaling, and border padding, before submitting the image to the OCR engine configured for a restricted alphanumeric vocabulary.
 
-Le pipeline applique successivement un filtrage médian, une binarisation automatique par la méthode d'Otsu, des opérations morphologiques, un agrandissement et l'ajout d'une bordure, avant de soumettre l'image au moteur OCR configuré pour un vocabulaire alphanumérique restreint.
+The objective is to implement an experimental image restoration approach applied to OCR, where the quality of preprocessing directly conditions recognition accuracy.
 
-L'objectif est de mettre en œuvre une approche expérimentale de restauration d'image appliquée à l'OCR, où la qualité du prétraitement conditionne directement la précision de la reconnaissance.
+## 2. Objectives
 
-## 2. Objectifs
+The main objectives of the project are as follows:
 
-Les principaux objectifs du projet sont les suivants :
+- Load a degraded image and convert it to grayscale.
+- Reduce impulse noise using median filtering while preserving character edges.
+- Automatically binarize the image using Otsu's method, then invert its polarity.
+- Enhance characters using morphological operations (dilation, opening).
+- Upscale the image and add a border to facilitate reading by Tesseract.
+- Restrict the OCR vocabulary to uppercase letters and digits, and adapt the segmentation mode.
+- Extract the detected text and visualize the results in the notebook.
 
-- Charger une image dégradée et la convertir en niveaux de gris.
-- Réduire le bruit impulsionnel par filtrage médian tout en préservant les contours des caractères.
-- Binariser l'image automatiquement à l'aide de la méthode d'Otsu, puis inverser sa polarité.
-- Renforcer les caractères par des opérations morphologiques (dilatation, ouverture).
-- Agrandir l'image et ajouter une bordure pour faciliter la lecture par Tesseract.
-- Restreindre le vocabulaire OCR aux majuscules et aux chiffres, et adapter le mode de segmentation.
-- Extraire le texte détecté et visualiser les résultats dans le notebook.
+## 3. Main Features
 
-## 3. Fonctionnalités principales
+### 3.1. Image Preprocessing
 
-### 3.1. Prétraitement de l'image
+- **Grayscale Conversion** (`cv2.cvtColor`, `COLOR_BGR2GRAY`): reduces the image representation to a single channel to simplify subsequent processing.
+- **Median Filtering** (`cv2.medianBlur`, 21 × 21 kernel): eliminates "salt and pepper" impulse noise while preserving character edges.
+- **Otsu's Thresholding** (`cv2.threshold`, `THRESH_BINARY + THRESH_OTSU`): automatic binarization without a manual threshold.
+- **Inversion** (`cv2.bitwise_not`): yields white characters on a black background, a polarity exploited by the following morphological operations.
+- **Dilation** (`cv2.dilate`, 5 × 5 rectangular kernel, two iterations): thickens the strokes of white characters to enhance their visibility.
+- **Morphological Opening** (`cv2.morphologyEx`, `MORPH_OPEN`): removes small parasitic white components and artifacts introduced by the processing.
 
-- **Conversion en niveaux de gris** (`cv2.cvtColor`, `COLOR_BGR2GRAY`) : réduit la représentation de l'image à un seul canal afin de simplifier les traitements ultérieurs.
-- **Filtrage médian** (`cv2.medianBlur`, noyau de 21 × 21) : élimine le bruit impulsionnel de type « sel et poivre » tout en préservant les contours des caractères.
-- **Seuillage d'Otsu** (`cv2.threshold`, `THRESH_BINARY + THRESH_OTSU`) : binarisation automatique sans seuil manuel.
-- **Inversion** (`cv2.bitwise_not`) : obtention de caractères blancs sur fond noir, polarité exploité par les opérations morphologiques suivantes.
-- **Dilatation** (`cv2.dilate`, noyau rectangulaire 5 × 5, deux itérations) : épaissit les traits des caractères blancs pour renforcer leur visibilité.
-- **Ouverture morphologique** (`cv2.morphologyEx`, `MORPH_OPEN`) : supprime les petites composantes blanches parasites et les artefacts introduits par le traitement.
+### 3.2. Scaling and Border Padding
 
-### 3.2. Mise à l'échelle et ajout de bordure
+- **Upscaling** (`cv2.resize`, scale factor of 6 in x and y, `INTER_LINEAR`): increases the perceived size of characters, which improves recognition when the initial image has insufficient resolution.
+- **Constant Border** (`cv2.copyMakeBorder`, 40 pixels on all four sides, `BORDER_CONSTANT`, `value=255`): isolates the text from the image edges to limit recognition errors for characters located at the periphery. The border color is defined by the `value` parameter (here white) and must remain consistent with the polarity of the image submitted to Tesseract.
 
-- **Agrandissement** (`cv2.resize`, facteur d'échelle 6 en x et y, `INTER_LINEAR`) : augmente la taille perçue des caractères, ce qui améliore la reconnaissance lorsque l'image initiale présente une résolution insuffisante.
-- **Bordure constante** (`cv2.copyMakeBorder`, 40 pixels sur les quatre côtés, `BORDER_CONSTANT`, `value=255`) : isole le texte des bords de l'image afin de limiter les erreurs de reconnaissance des caractères situés en périphérie. La couleur de la bordure est définie par le paramètre `value` (ici blanc) et doit rester cohérente avec la polarité de l'image soumise à Tesseract.
+### 3.3. OCR Engine Configuration
 
-### 3.3. Configuration du moteur OCR
-
-PyTesseract est appelé avec la configuration suivante :
+PyTesseract is called with the following configuration:
 
 ```text
 --oem 1 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 ```
 
-Le détail des paramètres est présenté en section 6. Le texte retourné est nettoyé (suppression des espaces et retours à la ligne via `strip()`).
+The details of the parameters are presented in Section 6. The returned text is cleaned (removal of spaces and line breaks via `strip()`).
 
-### 3.4. Visualisation des résultats
+### 3.4. Results Visualization
 
-Le traitement produit les visualisations suivantes dans le notebook :
+The processing produces the following visualizations in the notebook:
 
-- L'image binaire prétraitée, avant agrandissement.
-- L'image finale soumise à l'OCR, avec le texte détecté affiché en titre.
-- Le texte détecté imprimé dans la console.
+- The preprocessed binary image, before upscaling.
+- The final image submitted to the OCR, with the detected text displayed as a title.
+- The detected text printed in the console.
 
-Sur l'image étudiée, le pipeline a produit la sortie brute suivante :
+On the studied image, the pipeline produced the following raw output:
 
 ```text
-Texte détecté : EXAMB
+Detected text: EXAMB
 ```
 
-Ce résultat correspond à la sortie obtenue lors de l'exécution du pipeline sur l'image utilisée dans ce projet. Il convient de le confronter à la vérité terrain (voir section 10.2).
+This result corresponds to the output obtained during the pipeline execution on the image used in this project. It should be compared with the ground truth (see Section 10.2).
 
-## 4. Architecture technique
+#### Results: Before / After
 
-Le pipeline de traitement est organisé en plusieurs étapes successives.
+<table>
+  <tr>
+    <th align="center">Original image</th>
+    <th align="center">Processed image</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="exam_ultra_hard.png" alt="Original degraded image" width="100%"/>
+    </td>
+    <td align="center">
+      <img src="processed_image.png" alt="Processed image submitted to OCR" width="100%"/>
+    </td>
+  </tr>
+</table>
 
-### Étape 1 : Acquisition de l'image
+## 4. Technical Architecture
 
-Lecture de l'image `exam_ultra_hard.png` via `cv2.imread`.
+The processing pipeline is organized into several successive steps.
 
-### Étape 2 : Conversion en niveaux de gris
+### Step 1: Image Acquisition
 
-Réduction de l'image à un seul canal (`COLOR_BGR2GRAY`).
+Reading the image `exam_ultra_hard.png` via `cv2.imread`.
 
-### Étape 3 : Réduction du bruit
+### Step 2: Grayscale Conversion
 
-Filtrage médian avec un noyau de 21 × 21.
+Reducing the image to a single channel (`COLOR_BGR2GRAY`).
 
-### Étape 4 : Binarisation et inversion
+### Step 3: Noise Reduction
 
-Seuillage automatique d'Otsu suivi d'une inversion (`bitwise_not`).
+Median filtering with a 21 × 21 kernel.
 
-### Étape 5 : Opérations morphologiques
+### Step 4: Binarization and Inversion
 
-Dilatation (noyau rectangulaire 5 × 5, deux itérations) puis ouverture morphologique avec le même noyau.
+Automatic Otsu thresholding followed by inversion (`bitwise_not`).
 
-### Étape 6 : Agrandissement et bordure
+### Step 5: Morphological Operations
 
-Redimensionnement avec un facteur 6 (interpolation linéaire), puis ajout d'une bordure constante blanche de 40 pixels sur les quatre côtés.
+Dilation (5 × 5 rectangular kernel, two iterations) then morphological opening with the same kernel.
 
-### Étape 7 : Inférence OCR et affichage
+### Step 6: Upscaling and Border
 
-Appel de `pytesseract.image_to_string` avec la configuration définie, nettoyage de la sortie et visualisation via Matplotlib.
+Resizing with a factor of 6 (linear interpolation), then adding a constant white border of 40 pixels on all four sides.
 
-## 5. Technologies utilisées
+### Step 7: OCR Inference and Display
 
-| Technologie | Utilisation |
+Calling `pytesseract.image_to_string` with the defined configuration, cleaning the output, and visualizing via Matplotlib.
+
+## 5. Technologies Used
+
+| Technology | Usage |
 |---|---|
-| Python | Langage principal du projet |
-| Jupyter Notebook | Développement et exécution interactive du pipeline |
-| OpenCV | Prétraitement (niveaux de gris, filtrage, seuillage, morphologie, redimensionnement, bordure) |
-| NumPy | Représentation et manipulation des matrices d'images |
-| PyTesseract (Tesseract OCR) | Reconnaissance optique de caractères |
-| Matplotlib | Visualisation des étapes intermédiaires et du résultat |
-| Pillow | Utilisé en interne par PyTesseract pour la conversion des images |
+| Python | Main project language |
+| Jupyter Notebook | Development and interactive execution of the pipeline |
+| OpenCV | Preprocessing (grayscale, filtering, thresholding, morphology, resizing, border) |
+| NumPy | Representation and manipulation of image matrices |
+| PyTesseract (Tesseract OCR) | Optical Character Recognition |
+| Matplotlib | Visualization of intermediate steps and final result |
+| Pillow | Used internally by PyTesseract for image conversion |
 
-## 6. Paramètres de configuration Tesseract
+## 6. Tesseract Configuration Parameters
 
-| Paramètre | Valeur | Rôle |
+| Parameter | Value | Role |
 |---|---|---|
-| `--oem` | 1 | Sélectionne le moteur de reconnaissance basé sur les réseaux de neurones LSTM de Tesseract |
-| `--psm` | 8 | Indique que l'image contient un seul mot |
-| `-c tessedit_char_whitelist` | A–Z, 0–9 | Limite les caractères autorisés aux majuscules et aux chiffres, afin de réduire les détections de symboles indésirables |
+| `--oem` | 1 | Selects the recognition engine based on Tesseract's LSTM neural networks |
+| `--psm` | 8 | Indicates that the image contains a single word |
+| `-c tessedit_char_whitelist` | A–Z, 0–9 | Restricts allowed characters to uppercase letters and digits, to reduce detections of unwanted symbols |
 
-Remarque : le code contient une configuration alternative testée puis écartée (`--psm 6` avec une whitelist limitée aux chiffres), qui n'a pas permis de détecter le chiffre « 8 » présent dans l'image. Ce point illustre la sensibilité du moteur OCR au mode de segmentation et au vocabulaire autorisé.
+Note: the code contains an alternative configuration tested and then discarded (`--psm 6` with a whitelist limited to digits), which failed to detect the digit "8" present in the image. This point illustrates the OCR engine's sensitivity to the segmentation mode and the allowed vocabulary.
 
-## 7. Prérequis
+## 7. Prerequisites
 
-Pour exécuter le projet, les éléments suivants sont nécessaires :
+To run the project, the following elements are required:
 
-- Python 3.8 ou une version ultérieure.
-- pip pour l'installation des dépendances.
-- Jupyter Notebook ou JupyterLab.
-- Les bibliothèques Python : `opencv-python`, `pytesseract`, `numpy`, `matplotlib` (Pillow est installé comme dépendance de PyTesseract).
-- Le moteur **Tesseract OCR installé au niveau du système** et accessible depuis le PATH.
-- L'image `exam_ultra_hard.png` disponible à côté du notebook.
+- Python 3.8 or a later version.
+- pip for dependency installation.
+- Jupyter Notebook or JupyterLab.
+- Python libraries: `opencv-python`, `pytesseract`, `numpy`, `matplotlib` (Pillow is installed as a dependency of PyTesseract).
+- The **Tesseract OCR engine installed at the system level** and accessible from the PATH.
+- The image `exam_ultra_hard.png` available next to the notebook.
 
-## 8. Installation et exécution
+## 8. Installation and Execution
 
-### 8.1. Récupération du projet
+### 8.1. Project Retrieval
 
-Cloner le dépôt Git :
+Clone the Git repository:
 
 ```bash
-git clone <URL_DU_DEPOT>
+git clone <REPOSITORY_URL>
 ```
 
-Accéder au dossier du projet :
+Navigate to the project folder:
 
 ```bash
 cd ocr_pipeline
 ```
 
-Remplacer `<URL_DU_DEPOT>` par l'adresse réelle du dépôt GitHub.
+Replace `<REPOSITORY_URL>` with the actual GitHub repository address.
 
-### 8.2. Installation des dépendances
+### 8.2. Dependency Installation
 
-Installer les dépendances Python :
+Install the Python dependencies:
 
 ```bash
 pip install opencv-python pytesseract numpy matplotlib
 ```
 
-Ou, si un fichier `requirements.txt` est présent :
+Or, if a `requirements.txt` file is present:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 8.3. Installation de Tesseract OCR
+### 8.3. Tesseract OCR Installation
 
-Le moteur Tesseract doit être installé séparément, au niveau du système :
+The Tesseract engine must be installed separately, at the system level:
 
-- **Windows** : télécharger l'installateur depuis le dépôt [UB-Mannheim Tesseract](https://github.com/UB-Mannheim/tesseract/wiki), puis vérifier que le dossier d'installation est ajouté au PATH.
-- **Linux** :
+- **Windows**: download the installer from the [UB-Mannheim Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) repository, then verify that the installation folder is added to the PATH.
+- **Linux**:
 
 ```bash
 sudo apt-get install tesseract-ocr
 ```
 
-- **macOS** :
+- **macOS**:
 
 ```bash
 brew install tesseract
 ```
 
-Vérifier l'installation :
+Verify the installation:
 
 ```bash
 tesseract --version
 ```
 
-### 8.4. Lancement du notebook
+### 8.4. Notebook Launch
 
-Démarrer Jupyter Notebook :
+Start Jupyter Notebook:
 
 ```bash
 jupyter notebook
 ```
 
-Ouvrir le fichier `ocr_pipeline.ipynb` et exécuter les cellules dans l'ordre prévu.
+Open the `ocr_pipeline.ipynb` file and execute the cells in the intended order.
 
-Avant l'exécution, vérifier les éléments suivants :
+Before execution, verify the following elements:
 
-- La présence de l'image `exam_ultra_hard.png` au chemin attendu par le code.
-- L'accessibilité de Tesseract depuis le PATH (sinon, définir `pytesseract.pytesseract.tesseract_cmd` dans le notebook).
-- L'installation correcte des dépendances Python.
+- The presence of the `exam_ultra_hard.png` image at the path expected by the code.
+- The accessibility of Tesseract from the PATH (otherwise, define `pytesseract.pytesseract.tesseract_cmd` in the notebook).
+- The correct installation of Python dependencies.
 
-## 9. Structure du projet
+## 9. Project Structure
 
-La structure actuelle du dépôt est la suivante :
+The current repository structure is as follows:
 
 ```text
 ocr_pipeline/
-├── ocr_pipeline.ipynb     # Notebook contenant le pipeline et les visualisations
-├── exam_ultra_hard.png    # Image source dégradée utilisée par le code
-├── README.md              # Documentation du projet
+├── ocr_pipeline.ipynb     # Notebook containing the pipeline and visualizations
+├── exam_ultra_hard.png    # Degraded source image (before) used by the code
+├── processed_image.png    # Processed image (after) used for the before/after comparison
+├── README.md              # Project documentation
 ├── .gitattributes
 └── .gitignore
 ```
 
-Remarque : le pipeline n'exporte aucune image traitée (aucun appel à `cv2.imwrite`). Si un fichier `processed_image.png` est présent dans le dépôt, il s'agit d'un artefact exporté manuellement et non d'une sortie du code.
+Description of the elements:
 
-## 10. Limites et perspectives d'amélioration
+- `ocr_pipeline.ipynb`: Jupyter notebook containing the code, processing steps, and project visualizations.
+- `exam_ultra_hard.png`: highly degraded and noisy source image processed by the pipeline (before).
+- `processed_image.png`: image resulting from the preprocessing stage, used for the before/after comparison in Section 3.4 (after).
+- `README.md`: project documentation.
+- `.gitattributes` / `.gitignore`: Git configuration files.
 
-### 10.1. Paramètres calibrés pour une image
+Note: the pipeline code itself does not export any processed image (no call to `cv2.imwrite`). The `processed_image.png` file present in the repository is an artifact exported manually from the notebook, provided for documentation and visualization purposes.
 
-Les valeurs du pipeline (noyau médian 21, noyau morphologique 5 × 5, deux itérations, facteur d'agrandissement 6, bordure de 40 pixels) sont fixes et ajustées pour l'image étudiée. Leur généralisation à d'autres images n'est pas garantie. Une automatisation du choix des paramètres (recherche par grille, sélection adaptative) constituerait une amélioration notable.
+## 10. Limitations and Improvement Perspectives
 
-### 10.2. Confusions de caractères
+### 10.1. Parameters Calibrated for a Single Image
 
-Le whitelist réduit les faux caractères mais n'élimine pas les confusions visuelles typiques (« 8 »/« B », « 0 »/« O », « 1 »/« I »). Le commentaire présent dans le code suggère qu'un « 8 » de l'image est difficile à détecter, la sortie « EXAMB » pouvant correspondre à une telle confusion. L'exploitation des scores de confiance (`pytesseract.image_to_data`) et un vote entre plusieurs configurations PSM permettraient de fiabiliser le résultat.
+The pipeline values (median kernel 21, morphological kernel 5 × 5, two iterations, upscale factor 6, 40-pixel border) are fixed and adjusted for the studied image. Their generalization to other images is not guaranteed. Automating the parameter selection (grid search, adaptive selection) would constitute a notable improvement.
 
-### 10.3. Cas d'usage restreint
+### 10.2. Character Confusions
 
-Le mode `--psm 8` suppose une image contenant un seul mot. Une extension du pipeline à des images multi-mots ou multi-lignes (modes `--psm 6` ou `--psm 3`) et à un traitement par lots d'images élargirait le périmètre du projet.
+The whitelist reduces false characters but does not eliminate typical visual confusions ("8"/"B", "0"/"O", "1"/"I"). The comment present in the code suggests that an "8" in the image is difficult to detect, the "EXAMB" output possibly corresponding to such a confusion. Exploiting confidence scores (`pytesseract.image_to_data`) and voting between multiple PSM configurations would make the result more reliable.
 
-### 10.4. Absence d'évaluation quantitative
+### 10.3. Restricted Use Case
 
-Aucune métrique de performance n'est calculée. Une comparaison systématique avec la vérité terrain (taux d'erreur de caractères — *Character Error Rate* — et de mots — *Word Error Rate*) sur un ensemble d'images dégradées permettrait d'évaluer objectivement le pipeline.
+The `--psm 8` mode assumes an image containing a single word. Extending the pipeline to multi-word or multi-line images (modes `--psm 6` or `--psm 3`) and to batch image processing would broaden the project's scope.
 
-### 10.5. Polarité et bordure
+### 10.4. Lack of Quantitative Evaluation
 
-La polarité après inversion et la couleur de la bordure sont fixées manuellement. Une détection automatique de la polarité (proportion de pixels noirs et blancs) rendrait le pipeline robuste à différents types d'images d'entrée.
+No performance metrics are calculated. A systematic comparison with the ground truth (Character Error Rate and Word Error Rate) on a set of degraded images would allow objectively evaluating the pipeline.
 
-### 10.6. Techniques de prétraitement avancées
+### 10.5. Polarity and Border
 
-D'autres pistes pourraient être explorées : débruitage non local (`cv2.fastNlMeansDenoising`), super-résolution, ou méthodes d'apprentissage profond (autoencodeurs de débruitage). Une comparaison avec des moteurs OCR alternatifs (EasyOCR, PaddleOCR) compléterait l'étude.
+The polarity after inversion and the border color are set manually. Automatic polarity detection (proportion of black and white pixels) would make the pipeline robust to different types of input images.
 
-### 10.7. Robustesse du code
+### 10.6. Advanced Preprocessing Techniques
 
-Le code ne vérifie pas le succès de la lecture de l'image (`cv2.imread` retourne silencieusement `None` en cas de fichier manquant) ni la disponibilité du binaire Tesseract. L'ajout de contrôles et de messages d'erreur explicites améliorerait l'expérience d'exécution.
+Other avenues could be explored: non-local denoising (`cv2.fastNlMeansDenoising`), super-resolution, or deep learning methods (denoising autoencoders). A comparison with alternative OCR engines (EasyOCR, PaddleOCR) would complete the study.
+
+### 10.7. Code Robustness
+
+The code does not verify the success of the image reading (`cv2.imread` silently returns `None` if the file is missing) nor the availability of the Tesseract binary. Adding checks and explicit error messages would improve the execution experience.
 
 ## 11. Conclusion
 
-Ce projet illustre l'intégration de techniques de prétraitement d'images et d'un moteur OCR dans un scénario de reconnaissance de texte sur image dégradée.
+This project illustrates the integration of image preprocessing techniques and an OCR engine in a text recognition scenario on a degraded image.
 
-L'association du filtrage médian, de la binarisation d'Otsu, des opérations morphologiques et d'une configuration restreinte de Tesseract permet d'étudier comment la qualité du prétraitement influence la précision de la reconnaissance.
+The combination of median filtering, Otsu binarization, morphological operations, and a restricted Tesseract configuration allows studying how preprocessing quality influences recognition accuracy.
 
-Cette architecture fournit une base expérimentale pour approfondir des sujets tels que l'évaluation quantitative de l'OCR, la gestion des confusions de caractères et la généralisation à des ensembles d'images plus variés.
+This architecture provides an experimental foundation for further exploration of topics such as quantitative OCR evaluation, character confusion management, and generalization to more varied image datasets.
 
-## 12. Auteur
+## 12. Author
 
-**Mohammed Boujaada**
+<div align="center">
 
-Étudiant en Master Intelligence Artificielle et Technologies Émergentes  
-Faculté des Sciences Appliquées de Nador (FSAN), Université Mohammed Premier, Maroc
+<table>
+<tr>
+<td align="center">
+<a href="https://github.com/mohammed-boujaada">
+<img src="https://github.com/mohammed-boujaada.png" width="120px;" alt="Mohammed Boujaada"/>
+<br/>
+<sub><b>Mohammed Boujaada</b></sub>
+</a>
+<br/>
+MIATE Master's — FSA Nador
+<br/>
+<a href="https://github.com/mohammed-boujaada">
+<img src="https://img.shields.io/badge/GitHub-@mohammed--boujaada-black?logo=github"/>
+</a>
+<a href="https://www.linkedin.com/in/mohammed-boujaada-229a3333a/">
+<img src="https://img.shields.io/badge/LinkedIn-Boujaada%20Mohammed-blue?logo=linkedin"/>
+</a>
+</td>
+</tr>
+</table>
 
-- LinkedIn : https://www.linkedin.com/in/mohammed-boujaada-229a3333a/
-- GitHub : https://github.com/mohammed-boujaada
+</div>
+
+**Institution**: FSA Nador — Master's in Artificial Intelligence & Emerging Technologies  
+**Module**: Computer Vision  
+**Academic Year**: 2025 - 2026
